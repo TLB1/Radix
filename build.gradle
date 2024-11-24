@@ -30,9 +30,19 @@ jar {
 }
 
 publishing {
+
+    publications {
+        maven(MavenPublication) {
+            groupId = "tlb1"
+            artifactId = 'radix'
+            version = "0.1.0"
+
+            from components.java
+        }
+    }
+
     repositories {
         maven {
-            id = "github"
             name = "GitHubPackages"
             url = "https://maven.pkg.github.com/tlb1/radix"
             credentials {
