@@ -32,8 +32,12 @@ public class SQLiteTable implements Table {
      */
     public final Class<? extends Record> type;
 
-    public Map<Field, String> fields;
+    private Map<Field, String> fields;
 
+    /**
+     * @param name of the database table in-context
+     * @param type record model for the database table
+     */
     public SQLiteTable(String name, Class<? extends Record> type) {
         this.name = name;
         this.type = type;

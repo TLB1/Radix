@@ -11,6 +11,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
+/**
+ * The database service implementation for SQLite
+ * Automatically creates the SQLite file when needed
+ */
 public class SQLiteService implements DBService {
     private Connection con;
 
@@ -18,10 +22,20 @@ public class SQLiteService implements DBService {
 
     private final List<SQLiteTable> tables = new ArrayList<>();
 
+    /**
+     * The path to SQLite file itself
+     */
     public final String dbPath;
 
+    /**
+     * The SQLite query for asserting if a table exists
+     */
     public static final String TABLE_QUERY = "SELECT name FROM sqlite_master WHERE type='table' AND name='%s';";
 
+    /**
+     * The default constructor
+     * @param database the path of the sqlite file
+     */
     public SQLiteService(String database) {
         dbPath = database;
     }
@@ -127,6 +141,11 @@ public class SQLiteService implements DBService {
         return 0;
     }
 
+    /**
+     * Experimental method for getting all records of a type
+     * @param type record type to retrieve
+     * @return the list of records retrieved from the database
+     */
     public List<?> getRecords(Class<?> type) {
        try{
            TableReader<?> tableReader = new TableReader<>(type, this);
@@ -140,7 +159,6 @@ public class SQLiteService implements DBService {
      * @param type record type to retrieve
      * @return null if something went wrong
      */
-
     public ResultSet retrieveAll(Class<?> type) {
         for (SQLiteTable table : tables) {
             if (table.type != type) continue;
