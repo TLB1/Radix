@@ -35,7 +35,7 @@ publishing {
         maven(MavenPublication) {
             groupId = "tlb1"
             artifactId = 'radix'
-            version = "0.1.0"
+            version = project.version
 
             from components.java
         }
