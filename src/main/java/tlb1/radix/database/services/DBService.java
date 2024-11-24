@@ -6,7 +6,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
 
+/**
+ * Is the template for all database service implementations
+ */
 public interface DBService {
+
     /**
      * @return the database url including the driver
      */
@@ -35,11 +39,13 @@ public interface DBService {
 
     /**
      * @param tableType class to create a table for
+     * @return the data-model of the real table
      * @throws SQLException when there is something wrong with the database
      */
     Table registerTable(Class<? extends Record> tableType) throws SQLException;
 
     /**
+     * @param tableName the table name in a database context
      * @return if the table exists, or did exist during this runtime
      * @throws SQLException when there is something wrong with the database
      */
