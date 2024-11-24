@@ -1,4 +1,4 @@
-package tlb1.radix.database;
+package tlb1.radix.database.annotations;
 
 import java.lang.annotation.*;
 

@@ -1,6 +1,8 @@
-package tlb1.radix.database;
+package tlb1.radix.database.services;
 
 import org.sqlite.JDBC;
+import tlb1.radix.database.records.Record;
+import tlb1.radix.database.records.RecordValueSet;
 
 import java.io.File;
 import java.sql.Connection;
@@ -9,30 +11,32 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
-public class DBService {
+public class SQLiteService implements DBService {
     private Connection con;
 
     private final Set<String> existingTables = new HashSet<>();
 
-    private final List<Table> tables = new ArrayList<>();
+    private final List<SQLiteTable> tables = new ArrayList<>();
 
     public final String dbPath;
 
     public static final String TABLE_QUERY = "SELECT name FROM sqlite_master WHERE type='table' AND name='%s';";
 
-    public DBService(String database) {
+    public SQLiteService(String database) {
         dbPath = database;
     }
 
+    @Override
     public String getDatabaseURL() {
         return JDBC.PREFIX + dbPath;
     }
 
-    @SuppressWarnings("unused")
+    @Override
     public void createConnection() throws SQLException {
         con = DriverManager.getConnection(getDatabaseURL());
     }
 
+    @Override
     public void closeConnection() throws SQLException {
         con.close();
     }
@@ -41,6 +45,7 @@ public class DBService {
      * Used to completely remove the database from the system
      * @throws SQLException if an error occurs while accessing the database
      */
+    @Override
     public void eradicate() throws SQLException {
         if(!con.isClosed()) closeConnection();
         if (!new File(dbPath).delete()) throw new IllegalStateException("DB File could not be deleted");
@@ -50,9 +55,9 @@ public class DBService {
      * @param tableType class to create a table for
      * @throws SQLException when there is something wrong with the database
      */
-    @SuppressWarnings("unused")
-    public Table registerTable(Class<? extends Record> tableType) throws SQLException {
-        Table table = new Table(tableType);
+    @Override
+    public SQLiteTable registerTable(Class<? extends Record> tableType) throws SQLException {
+        SQLiteTable table = new SQLiteTable(tableType);
         if (!tableExists(table.getName())) {
             exec(table.createTableQuery());
         }
@@ -64,6 +69,7 @@ public class DBService {
      * @return if the table exists, or did exist during this runtime
      * @throws SQLException when there is something wrong with the database
      */
+    @Override
     public boolean tableExists(String tableName) throws SQLException {
         if (existingTables.contains(tableName)) return true;
 
@@ -73,9 +79,9 @@ public class DBService {
     }
 
 
-    @SuppressWarnings("invert")
+    @Override
     public boolean tableExists(Class<?> type) {
-        for (Table table : tables) {
+        for (SQLiteTable table : tables) {
             if (table.type == type) return true;
         }
         return false;
@@ -86,9 +92,9 @@ public class DBService {
      * @param type record type to check
      * @return true if the table is empty or failed to find a matching database table
      */
-    @SuppressWarnings("unused")
+    @Override
     public boolean isTableEmpty(Class<?> type) {
-        for (Table table : tables) {
+        for (SQLiteTable table : tables) {
             if (table.type != type) continue;
             try {
                 return !execQuery(table.selectTableQuery() + " LIMIT 1").next();
@@ -100,17 +106,19 @@ public class DBService {
         return false;
     }
 
+    @Override
     public boolean hasRecords(Class<?> type) {
         return tableExists(type) && !isTableEmpty(type);
     }
 
-    public int getRecordCount(Class<?> type) {
-        for (Table table : tables) {
+    @Override
+    public long getRecordCount(Class<?> type) {
+        for (SQLiteTable table : tables) {
             if (table.type != type) continue;
             try {
                 ResultSet result = execQuery("SELECT COUNT(*) FROM %s".formatted(table.getName()));
                 result.next();
-                return result.getInt(1);
+                return result.getLong(1);
             } catch (SQLException e) {
                 e.printStackTrace();
                 return -1;
@@ -132,9 +140,9 @@ public class DBService {
      * @param type record type to retrieve
      * @return null if something went wrong
      */
-    @SuppressWarnings("unused")
-    protected ResultSet retrieveAll(Class<?> type) {
-        for (Table table : tables) {
+
+    public ResultSet retrieveAll(Class<?> type) {
+        for (SQLiteTable table : tables) {
             if (table.type != type) continue;
             try {
                 return execQuery(table.selectTableQuery());
@@ -149,7 +157,7 @@ public class DBService {
     public void insert(Record record) {
         if (!tableExists(record.getClass()))
             throw new IllegalArgumentException("There exists no table for this record type: " + record.getClass());
-        for (Table table : tables) {
+        for (SQLiteTable table : tables) {
             if (table.type != record.getClass()) continue;
             insert(table, table.prepareInsert(record));
             break;
@@ -164,14 +172,14 @@ public class DBService {
         Class<?> type = record.getClass();
         if (!tableExists(type))
             throw new IllegalArgumentException("There exists no table for this record type: " + type);
-        for (Table table : tables) {
+        for (SQLiteTable table : tables) {
             if (table.type != type) continue;
             insert(table, table.prepareInsert(records));
             break;
         }
     }
 
-    private void insert(Table table, RecordValueSet recordValueSet) {
+    private void insert(SQLiteTable table, RecordValueSet recordValueSet) {
         StringBuilder statement = new StringBuilder("INSERT INTO ");
         statement.append(table.getName()).append(" (");
         recordValueSet.getColumns().forEach(column -> statement.append(column).append(", "));

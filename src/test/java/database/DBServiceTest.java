@@ -1,7 +1,8 @@
 package database;
 
 import org.junit.jupiter.api.*;
-import tlb1.radix.database.DBService;
+import tlb1.radix.database.services.DBService;
+import tlb1.radix.database.services.SQLiteService;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -17,7 +18,7 @@ class DBServiceTest {
 
     @BeforeEach
     void resetService() throws SQLException {
-        service = new DBService(DB_NAME);
+        service = new SQLiteService(DB_NAME);
         service.createConnection();
     }
 

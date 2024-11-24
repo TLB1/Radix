@@ -1,13 +1,16 @@
-package tlb1.radix.database;
+package tlb1.radix.database.records;
 
+
+import tlb1.radix.database.services.SQLiteService;
+import tlb1.radix.database.services.TableReader;
 
 import java.util.List;
 
 public class RecordSet<T extends Record> {
-    private final DBService service;
+    private final SQLiteService service;
     private final Class<T> type;
 
-    public RecordSet(DBService service, Class<T> type) {
+    public RecordSet(SQLiteService service, Class<T> type) {
         this.service = service;
         this.type = type;
     }

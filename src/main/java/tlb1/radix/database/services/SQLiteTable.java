@@ -1,5 +1,11 @@
-package tlb1.radix.database;
+package tlb1.radix.database.services;
 
+import tlb1.radix.database.records.Record;
+import tlb1.radix.database.annotations.DBField;
+import tlb1.radix.database.annotations.Identifier;
+import tlb1.radix.database.annotations.Reference;
+import tlb1.radix.database.annotations.TableName;
+import tlb1.radix.database.records.RecordValueSet;
 import tlb1.radix.util.Multimap;
 
 import java.lang.reflect.Field;
@@ -9,13 +15,14 @@ import java.util.stream.Stream;
 /**
  *  The table interface that connects the DB to the data-model
  */
-public class Table {
+public class SQLiteTable implements Table {
 
     /**
-     * Table name for use in the DB
+     * DBTable name for use in the DB
      */
     private final String name;
 
+    @Override
     public String getName() {
         return name;
     }
@@ -27,7 +34,7 @@ public class Table {
 
     public Map<Field, String> fields;
 
-    public Table(String name, Class<? extends Record> type) {
+    public SQLiteTable(String name, Class<? extends Record> type) {
         this.name = name;
         this.type = type;
         this.fields = getTypeFields();
@@ -37,7 +44,7 @@ public class Table {
      * @param type class to create a DB table for
      * @throws NullPointerException if class does not include a table name
      */
-    public Table(Class<? extends Record> type) throws NullPointerException {
+    public SQLiteTable(Class<? extends Record> type) throws NullPointerException {
         this(type.getAnnotation(TableName.class).value(), type);
     }
 
@@ -94,6 +101,7 @@ public class Table {
      * @param type class to check
      * @return the first identifier field if present
      */
+    @Override
     public Optional<Field> getPrimaryKey(Class<?> type){
         return Arrays.stream(type.getDeclaredFields()).filter(foreignField ->
                 foreignField.isAnnotationPresent(Identifier.class)).findFirst();
@@ -102,7 +110,8 @@ public class Table {
     /**
      * Organises the Record data for use in a DB context
      */
-    protected RecordValueSet prepareInsert(Record r) {
+    @Override
+    public RecordValueSet prepareInsert(Record r) {
         if (r.getClass() != type) throw new IllegalArgumentException("Object should be of type " + type.getName());
         Multimap<String, String> record = new Multimap<>();
         fields.keySet().forEach(field -> {
@@ -117,7 +126,8 @@ public class Table {
     /**
      * Organises the Record collection data for use in a DB context
      */
-    protected RecordValueSet prepareInsert(Collection<? extends Record> collection) {
+    @Override
+    public RecordValueSet prepareInsert(Collection<? extends Record> collection) {
         if (collection.isEmpty()) return null;
         for (Record record : collection) {
             if (record.getClass() != type)
@@ -141,7 +151,8 @@ public class Table {
     /**
      * @return The sql query as an unprepared String
      */
-    protected String createTableQuery() {
+    @Override
+    public String createTableQuery() {
         StringBuilder query = new StringBuilder("CREATE TABLE ");
         query.append(name).append(" (\n ");
         fields.forEach(((field, value) -> query.append(getDBFieldName(field)).append(" ").append(value).append(",\n ")));
@@ -152,7 +163,8 @@ public class Table {
     /**
      * @return The sql query that contains a selector for all current fields in the java class
      */
-    protected String selectTableQuery() {
+    @Override
+    public String selectTableQuery() {
         StringBuilder query = new StringBuilder("SELECT ");
         fields.forEach(((field, value) -> query.append(getDBFieldName(field)).append(", ")));
         query.replace(query.length() - 2, query.length() - 1, " FROM");
@@ -160,10 +172,16 @@ public class Table {
         return query.toString();
     }
 
+    @Override
+    public String selectTableQuery(long limit) {
+        return "%s LIMIT %s".formatted(selectTableQuery(), limit);
+    }
+
     /**
      * @return A generated field name used for database generation, works with relational datastructures
      */
-    protected String getDBFieldName(Field field){
+    @Override
+    public String getDBFieldName(Field field){
         if(!field.isAnnotationPresent(Reference.class)) return field.getName();
 
         Optional<Field> otherField = getPrimaryKey(field.getType());

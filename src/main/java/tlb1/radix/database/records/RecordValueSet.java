@@ -1,4 +1,4 @@
-package tlb1.radix.database;
+package tlb1.radix.database.records;
 
 import tlb1.radix.util.Multimap;
 

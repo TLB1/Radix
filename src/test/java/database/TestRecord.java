@@ -1,7 +1,10 @@
 package database;
 
 import tlb1.radix.database.*;
-import tlb1.radix.database.Record;
+import tlb1.radix.database.records.Record;
+import tlb1.radix.database.annotations.DBField;
+import tlb1.radix.database.annotations.Identifier;
+import tlb1.radix.database.annotations.TableName;
 
 import java.util.Objects;
 import java.util.UUID;

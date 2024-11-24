@@ -1,4 +1,6 @@
-package tlb1.radix.database;
+package tlb1.radix.database.services;
+
+import tlb1.radix.database.annotations.DBField;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;

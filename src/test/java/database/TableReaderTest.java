@@ -3,8 +3,9 @@ package database;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import tlb1.radix.database.DBService;
-import tlb1.radix.database.TableReader;
+import tlb1.radix.database.services.DBService;
+import tlb1.radix.database.services.SQLiteService;
+import tlb1.radix.database.services.TableReader;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -24,7 +25,7 @@ class TableReaderTest {
 
     @BeforeAll
     static void initService() throws SQLException {
-        service = new DBService(DB_NAME);
+        service = new SQLiteService(DB_NAME);
         service.createConnection();
 
         service.registerTable(TestRecord.class);
