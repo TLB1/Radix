@@ -32,6 +32,7 @@ jar {
 publishing {
     repositories {
         maven {
+            id = "github"
             name = "GitHubPackages"
             url = "https://maven.pkg.github.com/tlb1/radix"
             credentials {
