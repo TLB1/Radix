@@ -8,10 +8,10 @@ Currently compatible with SQLite (using `org.xerial:sqlite-jdbc:3.46.0.0`)
 - Create local databases
 - Generate tables based on classes
 - Insert records or collections of records
-- Read tables (threadable)
+- Update or delete records
+- Read tables
 - Cache tables using ids
 
-*Note: Due to the data structure of the library, all features could be made threadable*
 ## Usage
 *Currently unavailable on mavenCentral*
 ### Local Build
