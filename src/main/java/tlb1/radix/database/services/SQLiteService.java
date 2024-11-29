@@ -5,10 +5,7 @@ import tlb1.radix.database.records.Record;
 import tlb1.radix.database.records.RecordValueSet;
 
 import java.io.File;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.*;
 
 /**
@@ -34,6 +31,7 @@ public class SQLiteService implements DBService {
 
     /**
      * The default constructor
+     *
      * @param database the path of the sqlite file
      */
     public SQLiteService(String database) {
@@ -57,11 +55,11 @@ public class SQLiteService implements DBService {
 
     /**
      * Used to completely remove the database from the system
+     *
      * @throws SQLException if an error occurs while accessing the database
      */
-    @Override
     public void eradicate() throws SQLException {
-        if(!con.isClosed()) closeConnection();
+        if (!con.isClosed()) closeConnection();
         if (!new File(dbPath).delete()) throw new IllegalStateException("DB File could not be deleted");
     }
 
@@ -143,22 +141,24 @@ public class SQLiteService implements DBService {
 
     /**
      * Experimental method for getting all records of a type
+     *
      * @param type record type to retrieve
      * @return the list of records retrieved from the database
      */
     public List<?> getRecords(Class<?> type) {
-       try{
-           TableReader<?> tableReader = new TableReader<>(type, this);
-           return tableReader.call();
-       }catch (Exception e){
-           throw new RuntimeException("Could not get records");
-       }
+        try {
+            TableReader<?> tableReader = new TableReader<>(type, this);
+            return tableReader.call();
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not get records");
+        }
     }
 
     /**
      * @param type record type to retrieve
      * @return null if something went wrong
      */
+    @Override
     public ResultSet retrieveAll(Class<?> type) {
         for (SQLiteTable table : tables) {
             if (table.type != type) continue;
@@ -171,7 +171,7 @@ public class SQLiteService implements DBService {
         return null;
     }
 
-    @SuppressWarnings("unused")
+    @Override
     public void insert(Record record) {
         if (!tableExists(record.getClass()))
             throw new IllegalArgumentException("There exists no table for this record type: " + record.getClass());
@@ -182,7 +182,7 @@ public class SQLiteService implements DBService {
         }
     }
 
-    @SuppressWarnings("unused")
+    @Override
     public void insert(Collection<? extends Record> records) {
         if (records.isEmpty()) return;
         Record record = records.iterator().next();
@@ -193,6 +193,30 @@ public class SQLiteService implements DBService {
         for (SQLiteTable table : tables) {
             if (table.type != type) continue;
             insert(table, table.prepareInsert(records));
+            break;
+        }
+    }
+
+    @Override
+    public void update(Record record) {
+        for (SQLiteTable table : tables) {
+            if (table.type != record.getClass()) continue;
+            delete(record);
+            insert(record);
+            break;
+        }
+    }
+
+    public void delete(Record record) {
+        for (SQLiteTable table : tables) {
+            if (table.type != record.getClass()) continue;
+            System.out.println(table.deleteRecordQuery());
+            try (PreparedStatement statement = con.prepareStatement(table.deleteRecordQuery())) {
+                statement.setString(1,  table.getIdentifier().get(record).toString());
+                statement.execute();
+            } catch (SQLException | IllegalAccessException e) {
+                e.printStackTrace();
+            }
             break;
         }
     }
@@ -225,6 +249,7 @@ public class SQLiteService implements DBService {
      * @param query sql that you want to execute
      * @throws SQLException when your sql statement is invalid
      */
+    @Override
     public void exec(String query) throws SQLException {
         con.createStatement().execute(query);
     }
@@ -237,6 +262,7 @@ public class SQLiteService implements DBService {
      * @return ResultSet of your query
      * @throws SQLException when your sql statement is invalid
      */
+    @Override
     public ResultSet execQuery(String query) throws SQLException {
         return con.createStatement().executeQuery(query);
     }

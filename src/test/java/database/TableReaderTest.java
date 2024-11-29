@@ -34,7 +34,7 @@ class TableReaderTest {
 
     @AfterAll
     static void deleteService() throws SQLException {
-        service.eradicate();
+        ((SQLiteService)service).eradicate();
     }
 
     @Test

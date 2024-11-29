@@ -75,7 +75,7 @@ public class SQLiteTable implements Table {
     private void addForeignKeys(Map<Field, String> tableFields) {
         Stream.of(this.type.getFields())
                 .filter(field -> field.isAnnotationPresent(Reference.class)).forEach((field -> {
-                    Optional<Field> foreignField = getPrimaryKey(field.getType());
+                    Optional<Field> foreignField = getIdentifier(field.getType());
 
                     if (foreignField.isEmpty())
                         throw new IllegalStateException("Reference reference does not have a Identifier");
@@ -95,7 +95,7 @@ public class SQLiteTable implements Table {
     private String getValue(Field field, Record record) throws IllegalAccessException {
         if(!field.isAnnotationPresent(Reference.class)) return field.get(record).toString();
 
-        Optional<Field> key = getPrimaryKey(field.getType());
+        Optional<Field> key = getIdentifier(field.getType());
 
         if(key.isPresent()) return key.get().get(field.get(record)).toString();
         return null;
@@ -106,10 +106,21 @@ public class SQLiteTable implements Table {
      * @return the first identifier field if present
      */
     @Override
-    public Optional<Field> getPrimaryKey(Class<?> type){
+    public Optional<Field> getIdentifier(Class<?> type){
         return Arrays.stream(type.getDeclaredFields()).filter(foreignField ->
                 foreignField.isAnnotationPresent(Identifier.class)).findFirst();
     }
+    /**
+     * @return the identifier field of this table
+     * @throws IllegalStateException if it couldn't retrieve an Identifier
+     */
+    @Override
+    public Field getIdentifier(){
+        return fields.keySet().stream().filter(foreignField ->
+                foreignField.isAnnotationPresent(Identifier.class)).findFirst()
+                .orElseThrow(()-> new IllegalStateException("Table should have an Identifier"));
+    }
+
 
     /**
      * Organises the Record data for use in a DB context
@@ -142,9 +153,9 @@ public class SQLiteTable implements Table {
         collection.forEach(r ->
             fields.keySet().forEach(field -> {
                 try {
-                    recordValues.put(getDBFieldName(field), getValue(field, r));
+                    recordValues.put(getFieldName(field), getValue(field, r));
                 } catch (IllegalAccessException ignored) {
-                   recordValues.put(getDBFieldName(field), "null");
+                   recordValues.put(getFieldName(field), "null");
                 }
             })
         );
@@ -159,7 +170,7 @@ public class SQLiteTable implements Table {
     public String createTableQuery() {
         StringBuilder query = new StringBuilder("CREATE TABLE ");
         query.append(name).append(" (\n ");
-        fields.forEach(((field, value) -> query.append(getDBFieldName(field)).append(" ").append(value).append(",\n ")));
+        fields.forEach(((field, value) -> query.append(getFieldName(field)).append(" ").append(value).append(",\n ")));
         query.replace(query.length() - 3, query.length() - 1, "\n);");
         return query.toString();
     }
@@ -170,7 +181,7 @@ public class SQLiteTable implements Table {
     @Override
     public String selectTableQuery() {
         StringBuilder query = new StringBuilder("SELECT ");
-        fields.forEach(((field, value) -> query.append(getDBFieldName(field)).append(", ")));
+        fields.forEach(((field, value) -> query.append(getFieldName(field)).append(", ")));
         query.replace(query.length() - 2, query.length() - 1, " FROM");
         query.append(name);
         return query.toString();
@@ -181,14 +192,19 @@ public class SQLiteTable implements Table {
         return "%s LIMIT %s".formatted(selectTableQuery(), limit);
     }
 
+    @Override
+    public String deleteRecordQuery(){
+        return "DELETE FROM %s WHERE %s = ?;".formatted(getName(), getFieldName(getIdentifier()));
+    }
+
     /**
      * @return A generated field name used for database generation, works with relational datastructures
      */
     @Override
-    public String getDBFieldName(Field field){
+    public String getFieldName(Field field){
         if(!field.isAnnotationPresent(Reference.class)) return field.getName();
 
-        Optional<Field> otherField = getPrimaryKey(field.getType());
+        Optional<Field> otherField = getIdentifier(field.getType());
         if(otherField.isEmpty()) return field.getName();
         String addedName = otherField.get().getName();
         addedName = addedName.substring(0, 1).toUpperCase() + addedName.substring(1);

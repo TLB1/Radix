@@ -5,6 +5,7 @@ import tlb1.radix.database.records.Record;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Is the template for all database service implementations
@@ -29,15 +30,6 @@ public interface DBService {
     void closeConnection() throws SQLException;
 
     /**
-     * Used to completely remove the database from the system
-     * @throws SQLException if an error occurs while accessing the database
-     * @throws UnsupportedOperationException if the database system does not support eradication
-     */
-    default void eradicate() throws SQLException{
-        throw new UnsupportedOperationException();
-    }
-
-    /**
      * @param tableType class to create a table for
      * @return the data-model of the real table
      * @throws SQLException when there is something wrong with the database
@@ -46,14 +38,14 @@ public interface DBService {
 
     /**
      * @param tableName the table name in a database context
-     * @return if the table exists, or did exist during this runtime
+     * @return if the table exists or did exist during this runtime
      * @throws SQLException when there is something wrong with the database
      */
     boolean tableExists(String tableName)  throws SQLException;
 
     /**
      * @param type record type to check
-     * @return if the table exists, or did exist during this runtime
+     * @return if the table exists or did exist during this runtime
     **/
     boolean tableExists(Class<?> type);
 
@@ -84,6 +76,14 @@ public interface DBService {
     ResultSet retrieveAll(Class<?> type);
 
     /**
+     * Experimental method for getting all records of a type
+     * @param type record type to retrieve
+     * @return the list of records retrieved from the database
+     * @throws IllegalStateException if something went wrong
+     */
+    List<?> getRecords(Class<?> type);
+
+    /**
      * Creates an interaction with the database, useful for single inserts.
      * The use of inserting multiple records with a Collection is highly recommended.
      * @param record to insert into the database
@@ -91,10 +91,21 @@ public interface DBService {
     void insert(Record record);
 
     /**
-     * Is highly optimised due to there only being one interaction with the database for many records
+     * Is highly optimized due to there only being one interaction with the database for many records
      * @param records to insert into the database
      */
     void insert(Collection<? extends Record> records);
+
+    /**
+     * Updates a record in the database using its identifier
+     * @param record to update
+     */
+    void update(Record record);
+
+    /**
+     * @param record record to delete
+     */
+    void delete(Record record);
 
     /**
      * A raw method to execute sql statements

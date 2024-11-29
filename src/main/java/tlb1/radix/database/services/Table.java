@@ -21,14 +21,19 @@ public interface Table {
      * @param type class to check
      * @return the first identifier field (if present)
      */
-    Optional<Field> getPrimaryKey(Class<?> type);
+    Optional<Field> getIdentifier(Class<?> type);
 
     /**
-     * @param field one of the records data-model fields
+     * @return the identifier field of this table
+     */
+    Field getIdentifier();
+
+    /**
+     * @param field one of the record data-model fields
      * @return the name of the field in the DB context
      * @throws IllegalArgumentException if the field is not related to the database context
      */
-    String getDBFieldName(Field field);
+    String getFieldName(Field field);
 
     /**
      * Organises the Record data for use in a DB context
@@ -58,8 +63,13 @@ public interface Table {
 
     /**
      * Is used to generate a sql query to select the first n rows
-     * @param limit sets the amount of rows
+     * @param limit sets the number of rows
      * @return The sql query as a String
      */
     String selectTableQuery(long limit);
+
+    /**
+     * @return the query to delete a single record
+     */
+    String deleteRecordQuery();
 }
