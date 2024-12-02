@@ -20,13 +20,13 @@ public interface DBService {
 
     /**
      * Attempts to establish a connection to the given database
-     * @throws SQLException if an error occurs with the connection to the database
+     * @throws SQLException when there is something wrong with the database
      */
     void createConnection() throws SQLException;
 
     /**
      * Closes the connection to the database
-     * @throws SQLException if an error occurs with the connection to the database
+     * @throws SQLException when there is something wrong with the database
      */
     void closeConnection() throws SQLException;
 
@@ -38,16 +38,14 @@ public interface DBService {
     /**
      * @param tableType class to create a table for
      * @return the data-model of the real table
-     * @throws SQLException when there is something wrong with the database
      */
-    Table registerTable(Class<? extends Record> tableType) throws SQLException;
+    Table registerTable(Class<? extends Record> tableType);
 
     /**
      * @param tableName the table name in a database context
      * @return if the table exists or did exist during this runtime
-     * @throws SQLException when there is something wrong with the database
      */
-    boolean tableExists(String tableName)  throws SQLException;
+    boolean tableExists(String tableName);
 
     /**
      * @param type record type to check

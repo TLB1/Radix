@@ -76,13 +76,18 @@ public class SQLiteService implements DBService {
      * @throws SQLException when there is something wrong with the database
      */
     @Override
-    public SQLiteTable registerTable(Class<? extends Record> tableType) throws SQLException {
+    public SQLiteTable registerTable(Class<? extends Record> tableType) {
         SQLiteTable table = new SQLiteTable(tableType);
-        if (!tableExists(table.getName())) {
-            exec(table.createTableQuery());
+        try {
+            if (!tableExists(table.getName())) {
+                exec(table.createTableQuery());
+            }
+            tables.add(table);
+            return table;
+        }catch (SQLException e){
+            e.printStackTrace();
+            throw new IllegalStateException("Could not create table") ;
         }
-        tables.add(table);
-        return table;
     }
 
     /**
@@ -90,12 +95,17 @@ public class SQLiteService implements DBService {
      * @throws SQLException when there is something wrong with the database
      */
     @Override
-    public boolean tableExists(String tableName) throws SQLException {
+    public boolean tableExists(String tableName) {
         if (existingTables.contains(tableName)) return true;
 
-        boolean exists = con.createStatement().executeQuery(String.format(TABLE_QUERY, tableName)).next();
-        if (exists) existingTables.add(tableName);
-        return exists;
+        try{
+            boolean exists = con.createStatement().executeQuery(String.format(TABLE_QUERY, tableName)).next();
+            if (exists) existingTables.add(tableName);
+            return exists;
+        }catch (SQLException e){
+            e.printStackTrace();
+            throw new IllegalStateException("Could not create table") ;
+        }
     }
 
 
@@ -118,11 +128,7 @@ public class SQLiteService implements DBService {
         Table table = getTable(type);
         if (table != null) return table;
         if (registrationPredicate.shouldRegister(type)) {
-            try {
-                registerTable(type);
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+            registerTable(type);
         }
         return getTable(type);
     }
