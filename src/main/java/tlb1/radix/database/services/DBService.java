@@ -1,5 +1,6 @@
 package tlb1.radix.database.services;
 
+import tlb1.radix.database.TableRegistrationPredicate;
 import tlb1.radix.database.records.Record;
 
 import java.sql.ResultSet;
@@ -28,6 +29,11 @@ public interface DBService {
      * @throws SQLException if an error occurs with the connection to the database
      */
     void closeConnection() throws SQLException;
+
+    /**
+     * @param predicate the predicate for automatically creating database tables
+     */
+    void setTableRegistrationPredicate(TableRegistrationPredicate predicate);
 
     /**
      * @param tableType class to create a table for

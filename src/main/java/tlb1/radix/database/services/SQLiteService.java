@@ -41,6 +41,7 @@ public class SQLiteService implements DBService {
         dbPath = database;
     }
 
+    @Override
     public void setTableRegistrationPredicate(TableRegistrationPredicate predicate) {
         registrationPredicate = predicate;
     }
