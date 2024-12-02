@@ -8,19 +8,23 @@ import tlb1.radix.database.records.RecordValueSet;
 import java.io.File;
 import java.sql.*;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The database service implementation for SQLite
  * Automatically creates the SQLite file when needed
  */
 public class SQLiteService implements DBService {
-    private Connection con;
+    private final Logger logger = Logger.getLogger(SQLiteService.class.getName());
 
     private final Set<String> existingTables = new HashSet<>();
-
     private final List<SQLiteTable> tables = new ArrayList<>();
 
     private TableRegistrationPredicate registrationPredicate;
+
+    private Connection con;
+
     /**
      * The path to SQLite file itself
      */
@@ -73,7 +77,6 @@ public class SQLiteService implements DBService {
 
     /**
      * @param tableType class to create a table for
-     * @throws SQLException when there is something wrong with the database
      */
     @Override
     public SQLiteTable registerTable(Class<? extends Record> tableType) {
@@ -85,14 +88,13 @@ public class SQLiteService implements DBService {
             tables.add(table);
             return table;
         }catch (SQLException e){
-            e.printStackTrace();
-            throw new IllegalStateException("Could not create table") ;
+            logger.log(Level.SEVERE, "Could not create table for %s.".formatted(tableType.getName()));
+            throw new IllegalStateException("Could not create table for %s.".formatted(tableType.getName()));
         }
     }
 
     /**
-     * @return if the table exists, or did exist during this runtime
-     * @throws SQLException when there is something wrong with the database
+     * @return if the table exists or did exist during this runtime
      */
     @Override
     public boolean tableExists(String tableName) {
@@ -103,8 +105,8 @@ public class SQLiteService implements DBService {
             if (exists) existingTables.add(tableName);
             return exists;
         }catch (SQLException e){
-            e.printStackTrace();
-            throw new IllegalStateException("Could not create table") ;
+            logger.log(Level.WARNING, "Could not check if table: %s exists.".formatted(tableName));
+            return false;
         }
     }
 
@@ -144,7 +146,7 @@ public class SQLiteService implements DBService {
             if (table == null) return true;
             return !execQuery(table.selectTableQuery() + " LIMIT 1").next();
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "Could not check if table for %s is empty.".formatted(type.getName()));
             return false;
         }
     }
@@ -163,7 +165,7 @@ public class SQLiteService implements DBService {
             result.next();
             return result.getLong(1);
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "Could not check record count of table for %s.".formatted(type.getName()));
             return -1;
         }
     }
@@ -179,7 +181,8 @@ public class SQLiteService implements DBService {
             TableReader<?> tableReader = new TableReader<>(type, this);
             return tableReader.call();
         } catch (Exception e) {
-            throw new IllegalStateException("Could not get records");
+            logger.log(Level.SEVERE, "Could not get records for type %s".formatted(type.getName()));
+            throw new IllegalStateException("Could not get records for type %s".formatted(type.getName()));
         }
     }
 
@@ -201,8 +204,11 @@ public class SQLiteService implements DBService {
     @Override
     public void insert(Record record) {
         Table table = getOrCreateTable(record.getClass());
-        if (table == null)
-            throw new IllegalArgumentException("No table could be created for this record type: " + record.getClass());
+        if (table == null){
+            logger.log(Level.SEVERE, "No table could be created for this record type: %s.".formatted(record.getClass()));
+            throw new IllegalArgumentException("No table could be created for this record type: %s.".formatted(record.getClass()));
+        }
+
         insert(table, table.prepareInsert(record));
     }
 
@@ -212,8 +218,10 @@ public class SQLiteService implements DBService {
         Record record = records.iterator().next();
         if (record == null) return;
         Table table = getOrCreateTable(record.getClass());
-        if (table == null)
-            throw new IllegalArgumentException("No table could be created for this record type: " + record.getClass());
+        if (table == null){
+            logger.log(Level.SEVERE, "No table could be created for this record type: %s.".formatted(record.getClass()));
+            throw new IllegalArgumentException("No table could be created for this record type: %s.".formatted(record.getClass()));
+        }
 
         insert(table, table.prepareInsert(records));
     }
@@ -231,12 +239,12 @@ public class SQLiteService implements DBService {
     public void delete(Record record) {
         for (SQLiteTable table : tables) {
             if (table.type != record.getClass()) continue;
-            System.out.println(table.deleteRecordQuery());
             try (PreparedStatement statement = con.prepareStatement(table.deleteRecordQuery())) {
                 statement.setString(1, table.getIdentifier().get(record).toString());
                 statement.execute();
             } catch (SQLException | IllegalAccessException e) {
-                e.printStackTrace();
+                logger.log(Level.SEVERE, "Record of type: %s could not be deleted.".formatted(record.getClass()));
+                throw new IllegalArgumentException("Record of type: %s could not be deleted.".formatted(record.getClass()));
             }
             break;
         }
@@ -259,7 +267,8 @@ public class SQLiteService implements DBService {
         try {
             exec(statement.toString());
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Records from table: %s could not be inserted.".formatted(table.getName()));
+            throw new IllegalArgumentException("Records from table: %s could not be inserted.".formatted(table.getName()));
         }
     }
 
