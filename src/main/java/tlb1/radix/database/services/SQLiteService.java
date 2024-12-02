@@ -99,6 +99,12 @@ public class SQLiteService implements DBService {
         return false;
     }
 
+    private Table getTable(Class<?> type) {
+        for (SQLiteTable table : tables) {
+            if (table.type.equals(type)) return table;
+        }
+        return null;
+    }
 
     /**
      * @param type record type to check
@@ -106,16 +112,14 @@ public class SQLiteService implements DBService {
      */
     @Override
     public boolean isTableEmpty(Class<?> type) {
-        for (SQLiteTable table : tables) {
-            if (table.type != type) continue;
-            try {
-                return !execQuery(table.selectTableQuery() + " LIMIT 1").next();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                return false;
-            }
+        try {
+            Table table = getTable(type);
+            if (table == null) return true;
+            return !execQuery(table.selectTableQuery() + " LIMIT 1").next();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
         }
-        return false;
     }
 
     @Override
@@ -125,18 +129,16 @@ public class SQLiteService implements DBService {
 
     @Override
     public long getRecordCount(Class<?> type) {
-        for (SQLiteTable table : tables) {
-            if (table.type != type) continue;
-            try {
-                ResultSet result = execQuery("SELECT COUNT(*) FROM %s".formatted(table.getName()));
-                result.next();
-                return result.getLong(1);
-            } catch (SQLException e) {
-                e.printStackTrace();
-                return -1;
-            }
+        try {
+            Table table = getTable(type);
+            if (table == null) return 0;
+            ResultSet result = execQuery("SELECT COUNT(*) FROM %s".formatted(table.getName()));
+            result.next();
+            return result.getLong(1);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return -1;
         }
-        return 0;
     }
 
     /**
@@ -160,26 +162,21 @@ public class SQLiteService implements DBService {
      */
     @Override
     public ResultSet retrieveAll(Class<?> type) {
-        for (SQLiteTable table : tables) {
-            if (table.type != type) continue;
-            try {
-                return execQuery(table.selectTableQuery());
-            } catch (SQLException e) {
-                return null;
-            }
+        try {
+            Table table = getTable(type);
+            if (table == null) return null;
+            return execQuery(table.selectTableQuery());
+        } catch (SQLException e) {
+            return null;
         }
-        return null;
     }
 
     @Override
     public void insert(Record record) {
-        if (!tableExists(record.getClass()))
+        Table table = getTable(record.getClass());
+        if (table == null)
             throw new IllegalArgumentException("There exists no table for this record type: " + record.getClass());
-        for (SQLiteTable table : tables) {
-            if (table.type != record.getClass()) continue;
-            insert(table, table.prepareInsert(record));
-            break;
-        }
+        insert(table, table.prepareInsert(record));
     }
 
     @Override
@@ -187,14 +184,11 @@ public class SQLiteService implements DBService {
         if (records.isEmpty()) return;
         Record record = records.iterator().next();
         if (record == null) return;
-        Class<?> type = record.getClass();
-        if (!tableExists(type))
-            throw new IllegalArgumentException("There exists no table for this record type: " + type);
-        for (SQLiteTable table : tables) {
-            if (table.type != type) continue;
-            insert(table, table.prepareInsert(records));
-            break;
-        }
+        Table table = getTable(record.getClass());
+        if (table == null)
+            throw new IllegalArgumentException("There exists no table for this record type: " + record.getClass());
+
+        insert(table, table.prepareInsert(records));
     }
 
     @Override
@@ -212,7 +206,7 @@ public class SQLiteService implements DBService {
             if (table.type != record.getClass()) continue;
             System.out.println(table.deleteRecordQuery());
             try (PreparedStatement statement = con.prepareStatement(table.deleteRecordQuery())) {
-                statement.setString(1,  table.getIdentifier().get(record).toString());
+                statement.setString(1, table.getIdentifier().get(record).toString());
                 statement.execute();
             } catch (SQLException | IllegalAccessException e) {
                 e.printStackTrace();
@@ -221,7 +215,7 @@ public class SQLiteService implements DBService {
         }
     }
 
-    private void insert(SQLiteTable table, RecordValueSet recordValueSet) {
+    private void insert(Table table, RecordValueSet recordValueSet) {
         StringBuilder statement = new StringBuilder("INSERT INTO ");
         statement.append(table.getName()).append(" (");
         recordValueSet.getColumns().forEach(column -> statement.append(column).append(", "));
