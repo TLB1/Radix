@@ -107,4 +107,23 @@ class DBServiceTest {
         // DB Updated - (equal)
         assertTrue(new TableReader<>(TestRecord.class, service).call().contains(record));
     }
+
+    @Test
+    void testInsertRecordWithoutRegisteringTable() throws SQLException {
+        service.insert(new TestRecord(10));
+
+        assertTrue(service.hasRecords(TestRecord.class));
+    }
+
+    @Test
+    void testInsertRecordsWithoutRegisteringTable() {
+        service.insert(List.of(
+                new TestRecord(10),
+                new TestRecord(20),
+                new TestRecord(30000)
+        ));
+
+        assertTrue(service.hasRecords(TestRecord.class));
+        assertEquals(3, service.getRecordCount(TestRecord.class));
+    }
 }

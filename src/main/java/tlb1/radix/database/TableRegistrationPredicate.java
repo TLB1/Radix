@@ -16,8 +16,8 @@ public class TableRegistrationPredicate {
     }
 
     public static final TableRegistrationPredicate IMPLEMENTED_RECORD_ONLY = new TableRegistrationPredicate(
-            (type)-> type.isAssignableFrom(Record.class) && type.isAnnotationPresent(TableName.class));
+            (type)-> Record.class.isAssignableFrom(type) && type.isAnnotationPresent(TableName.class));
 
     public static final TableRegistrationPredicate RECORD_ONLY = new TableRegistrationPredicate(
-            (type)-> type.isAssignableFrom(Record.class));
+            Record.class::isAssignableFrom);
 }
