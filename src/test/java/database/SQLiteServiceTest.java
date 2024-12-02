@@ -1,6 +1,7 @@
 package database;
 
 import org.junit.jupiter.api.*;
+import tlb1.radix.database.TableRegistrationPredicate;
 import tlb1.radix.database.services.DBService;
 import tlb1.radix.database.services.SQLiteService;
 import tlb1.radix.database.services.TableReader;
@@ -12,7 +13,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class DBServiceTest {
+class SQLiteServiceTest {
     private static final String DB_NAME = "test.db";
 
     private DBService service;
@@ -125,5 +126,34 @@ class DBServiceTest {
 
         assertTrue(service.hasRecords(TestRecord.class));
         assertEquals(3, service.getRecordCount(TestRecord.class));
+    }
+    @Test
+    void testInsertRecordsThatAreNoRecord() {
+        assertThrows(IllegalArgumentException.class, ()->{
+            service.insert(List.of(
+                    new NotATestRecord(),
+                    new NotATestRecord(),
+                    new NotATestRecord()
+            ));
+        });
+
+        assertFalse(service.tableExists(NotATestRecord.class));
+        assertFalse(service.hasRecords(NotATestRecord.class));
+    }
+
+    @Test
+    void testInsertRecordsWithAltPredicate() {
+        service.setTableRegistrationPredicate(TableRegistrationPredicate.RECORD_ONLY);
+
+        assertDoesNotThrow(()->{
+            service.insert(List.of(
+                    new NotATestRecord(),
+                    new NotATestRecord(),
+                    new NotATestRecord()
+            ));
+        });
+
+        assertTrue(service.tableExists(NotATestRecord.class));
+        assertTrue(service.hasRecords(NotATestRecord.class));
     }
 }

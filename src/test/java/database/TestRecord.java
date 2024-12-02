@@ -10,7 +10,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 @TableName("tests")
-public class TestRecord extends Record {
+public class TestRecord implements Record {
 
     @Identifier
     @DBField(FieldType.UUID)

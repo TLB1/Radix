@@ -49,7 +49,11 @@ public class SQLiteTable implements Table {
      * @throws NullPointerException if class does not include a table name
      */
     public SQLiteTable(Class<? extends Record> type) throws NullPointerException {
-        this(type.getAnnotation(TableName.class).value(), type);
+        if(type.isAnnotationPresent(TableName.class)){
+            name = type.getAnnotation(TableName.class).value();
+        }else name = type.getSimpleName() + "s";
+        this.type = type;
+        this.fields = getTypeFields();
     }
 
     /**
@@ -93,7 +97,10 @@ public class SQLiteTable implements Table {
      * @throws IllegalAccessException if the field does not have a public accessor
      */
     private String getValue(Field field, Record record) throws IllegalAccessException {
-        if(!field.isAnnotationPresent(Reference.class)) return field.get(record).toString();
+        if(!field.isAnnotationPresent(Reference.class)){
+            if(field.get(record) == null) return null;
+            return field.get(record).toString();
+        }
 
         Optional<Field> key = getIdentifier(field.getType());
 

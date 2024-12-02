@@ -5,6 +5,6 @@ package tlb1.radix.database.records;
  * All record types should extend this class.
  * Has no other use
  */
-public abstract class Record {
+public interface Record {
 
 }
