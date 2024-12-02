@@ -1,6 +1,7 @@
 package tlb1.radix.database.services;
 
 import org.sqlite.JDBC;
+import tlb1.radix.database.TableRegistrationPredicate;
 import tlb1.radix.database.records.Record;
 import tlb1.radix.database.records.RecordValueSet;
 
@@ -19,6 +20,7 @@ public class SQLiteService implements DBService {
 
     private final List<SQLiteTable> tables = new ArrayList<>();
 
+    private TableRegistrationPredicate registrationPredicate;
     /**
      * The path to SQLite file itself
      */
@@ -35,7 +37,12 @@ public class SQLiteService implements DBService {
      * @param database the path of the sqlite file
      */
     public SQLiteService(String database) {
+        registrationPredicate = TableRegistrationPredicate.IMPLEMENTED_RECORD_ONLY;
         dbPath = database;
+    }
+
+    public void setTableRegistrationPredicate(TableRegistrationPredicate predicate) {
+        registrationPredicate = predicate;
     }
 
     @Override
@@ -106,6 +113,19 @@ public class SQLiteService implements DBService {
         return null;
     }
 
+    private Table getOrCreateTable(Class<? extends Record> type) {
+        Table table = getTable(type);
+        if (table != null) return table;
+        if (registrationPredicate.shouldRegister(type)) {
+            try {
+                registerTable(type);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return getTable(type);
+    }
+
     /**
      * @param type record type to check
      * @return true if the table is empty or failed to find a matching database table
@@ -173,9 +193,9 @@ public class SQLiteService implements DBService {
 
     @Override
     public void insert(Record record) {
-        Table table = getTable(record.getClass());
+        Table table = getOrCreateTable(record.getClass());
         if (table == null)
-            throw new IllegalArgumentException("There exists no table for this record type: " + record.getClass());
+            throw new IllegalArgumentException("No table could be created for this record type: " + record.getClass());
         insert(table, table.prepareInsert(record));
     }
 
@@ -184,9 +204,9 @@ public class SQLiteService implements DBService {
         if (records.isEmpty()) return;
         Record record = records.iterator().next();
         if (record == null) return;
-        Table table = getTable(record.getClass());
+        Table table = getOrCreateTable(record.getClass());
         if (table == null)
-            throw new IllegalArgumentException("There exists no table for this record type: " + record.getClass());
+            throw new IllegalArgumentException("No table could be created for this record type: " + record.getClass());
 
         insert(table, table.prepareInsert(records));
     }
