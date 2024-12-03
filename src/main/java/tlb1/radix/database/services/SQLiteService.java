@@ -16,7 +16,7 @@ import java.util.logging.Logger;
  * Automatically creates the SQLite file when needed
  */
 public class SQLiteService implements DBService {
-    private final Logger logger = Logger.getLogger(SQLiteService.class.getName());
+    private static final Logger logger = Logger.getLogger(SQLiteService.class.getName());
 
     private final Set<String> existingTables = new HashSet<>();
     private final List<SQLiteTable> tables = new ArrayList<>();
@@ -53,7 +53,6 @@ public class SQLiteService implements DBService {
         if(magic) registrationPredicate = TableRegistrationPredicate.RECORD_ONLY;
         else  registrationPredicate = TableRegistrationPredicate.IMPLEMENTED_RECORD_ONLY;
         dbPath = database;
-
         try{
             createConnection();
         }catch (SQLException e){
@@ -61,6 +60,7 @@ public class SQLiteService implements DBService {
             throw new IllegalStateException("Could not create database connection using magic.");
         }
     }
+
 
     @Override
     public void setTableRegistrationPredicate(TableRegistrationPredicate predicate) {
@@ -80,6 +80,11 @@ public class SQLiteService implements DBService {
     @Override
     public void closeConnection() throws SQLException {
         con.close();
+    }
+
+    @Override
+    public void setLogLevel(Level level) {
+        logger.setLevel(level);
     }
 
     /**

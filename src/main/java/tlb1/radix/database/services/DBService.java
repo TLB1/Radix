@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
+import java.util.logging.Level;
 
 /**
  * Is the template for all database service implementations
@@ -30,6 +31,10 @@ public interface DBService extends AutoCloseable {
      */
     void closeConnection() throws SQLException;
 
+    /**
+     * @param level the level to set the class' log level
+     */
+    void setLogLevel(Level level);
     /**
      * @param predicate the predicate for automatically creating database tables
      */

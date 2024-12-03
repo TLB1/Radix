@@ -12,6 +12,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Level;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -24,6 +25,7 @@ class SQLiteServiceTest {
     void resetService() throws SQLException {
         service = new SQLiteService(DB_NAME);
         service.createConnection();
+        service.setLogLevel(Level.OFF);
     }
 
     @AfterEach
