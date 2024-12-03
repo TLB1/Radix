@@ -1,4 +1,4 @@
-package database;
+package database.records;
 
 import tlb1.radix.database.FieldType;
 import tlb1.radix.database.annotations.DBField;

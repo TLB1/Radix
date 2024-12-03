@@ -1,5 +1,7 @@
 package database;
 
+import database.records.NotATestRecord;
+import database.records.TestRecord;
 import org.junit.jupiter.api.*;
 import tlb1.radix.database.TableRegistrationPredicate;
 import tlb1.radix.database.services.DBService;
@@ -30,7 +32,7 @@ class SQLiteServiceTest {
     }
 
     @Test
-    void testRegisterTable() throws SQLException {
+    void testRegisterTable() {
         service.registerTable(TestRecord.class);
 
         assertTrue(service.tableExists(TestRecord.class));
@@ -38,7 +40,7 @@ class SQLiteServiceTest {
     }
 
     @Test
-    void testInsertRecord() throws SQLException {
+    void testInsertRecord() {
         service.registerTable(TestRecord.class);
         service.insert(new TestRecord(10));
 
@@ -46,7 +48,7 @@ class SQLiteServiceTest {
     }
 
     @Test
-    void testInsertRecords() throws SQLException {
+    void testInsertRecords() {
         service.registerTable(TestRecord.class);
         service.insert(List.of(
                 new TestRecord(10),
@@ -59,7 +61,7 @@ class SQLiteServiceTest {
     }
 
     @Test
-    void testInsertManyRecords() throws SQLException {
+    void testInsertManyRecords() {
         int count = 500;
         service.registerTable(TestRecord.class);
         List<TestRecord> records = new ArrayList<>(count);
@@ -75,7 +77,7 @@ class SQLiteServiceTest {
     }
 
     @Test
-    void testDeleteRecord() throws SQLException {
+    void testDeleteRecord() {
         service.registerTable(TestRecord.class);
         TestRecord record = new TestRecord(2000);
         service.insert(record);
