@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * Is the template for all database service implementations
  */
-public interface DBService {
+public interface DBService extends AutoCloseable {
 
     /**
      * @return the database url including the driver

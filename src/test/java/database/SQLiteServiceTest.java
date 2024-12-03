@@ -158,4 +158,21 @@ class SQLiteServiceTest {
         assertTrue(service.tableExists(NotATestRecord.class));
         assertTrue(service.hasRecords(NotATestRecord.class));
     }
+
+    @Test
+    void testInsertRecordsWithMagic() throws SQLException {
+        eradicateService();
+        service = new SQLiteService(DB_NAME, true);
+
+        assertDoesNotThrow(()->{
+            service.insert(List.of(
+                    new NotATestRecord(),
+                    new NotATestRecord(),
+                    new NotATestRecord()
+            ));
+        });
+
+        assertTrue(service.tableExists(NotATestRecord.class));
+        assertTrue(service.hasRecords(NotATestRecord.class));
+    }
 }

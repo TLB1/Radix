@@ -44,6 +44,23 @@ public class SQLiteService implements DBService {
         registrationPredicate = TableRegistrationPredicate.IMPLEMENTED_RECORD_ONLY;
         dbPath = database;
     }
+    /**
+     * The default constructor
+     *
+     * @param database the path of the sqlite file
+     */
+    public SQLiteService(String database, boolean magic) {
+        if(magic) registrationPredicate = TableRegistrationPredicate.RECORD_ONLY;
+        else  registrationPredicate = TableRegistrationPredicate.IMPLEMENTED_RECORD_ONLY;
+        dbPath = database;
+
+        try{
+            createConnection();
+        }catch (SQLException e){
+            logger.log(Level.SEVERE, "Could not create database connection using magic.");
+            throw new IllegalStateException("Could not create database connection using magic.");
+        }
+    }
 
     @Override
     public void setTableRegistrationPredicate(TableRegistrationPredicate predicate) {
@@ -295,5 +312,10 @@ public class SQLiteService implements DBService {
     @Override
     public ResultSet execQuery(String query) throws SQLException {
         return con.createStatement().executeQuery(query);
+    }
+
+    @Override
+    public void close() throws Exception {
+        closeConnection();
     }
 }
