@@ -14,6 +14,8 @@ Currently compatible with SQLite (using `org.xerial:sqlite-jdbc:3.46.0.0`)
 
 ## Usage
 *Currently unavailable on mavenCentral*
+### Packages
+Go to `Packages` on this repo and download the jar file.
 ### Local Build
 ```bash
 git clone https://github.com/TLB1/Radix.git
