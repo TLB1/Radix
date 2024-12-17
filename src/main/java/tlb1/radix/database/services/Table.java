@@ -1,5 +1,6 @@
 package tlb1.radix.database.services;
 
+import tlb1.radix.database.Column;
 import tlb1.radix.database.records.Record;
 import tlb1.radix.database.records.RecordValueSet;
 
@@ -18,9 +19,9 @@ public interface Table {
     String getName();
 
     /**
-     * @return the identifier field of this table
+     * @return the identifier column of this table
      */
-    Field getIdentifier();
+    Column getIdentifier();
 
     /**
      * Organises the Record data for use in a DB context

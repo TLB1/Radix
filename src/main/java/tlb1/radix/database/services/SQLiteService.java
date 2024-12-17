@@ -267,7 +267,7 @@ public class SQLiteService implements DBService {
         for (SQLiteTable table : tables) {
             if (table.type != record.getClass()) continue;
             try (PreparedStatement statement = con.prepareStatement(table.deleteRecordQuery())) {
-                statement.setString(1, table.getIdentifier().get(record).toString());
+                statement.setString(1, table.getIdentifier().getField().get(record).toString());
                 statement.execute();
             } catch (SQLException | IllegalAccessException e) {
                 logger.log(Level.SEVERE, "Record of type: %s could not be deleted.".formatted(record.getClass()));

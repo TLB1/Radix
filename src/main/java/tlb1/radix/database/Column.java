@@ -14,7 +14,7 @@ public class Column {
         this.field = field;
     }
 
-    public FieldType getColumnType() {
+    public FieldType getType() {
         return columnType;
     }
 

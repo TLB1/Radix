@@ -3,7 +3,6 @@ package tlb1.radix.database.services;
 import tlb1.radix.database.Column;
 import tlb1.radix.database.FieldUsePredicate;
 import tlb1.radix.database.records.Record;
-import tlb1.radix.database.annotations.DBField;
 import tlb1.radix.database.annotations.Identifier;
 import tlb1.radix.database.annotations.Reference;
 import tlb1.radix.database.annotations.TableName;
@@ -12,7 +11,6 @@ import tlb1.radix.util.Multimap;
 
 import java.lang.reflect.Field;
 import java.util.*;
-import java.util.stream.Stream;
 
 /**
  *  The table interface that connects the DB to the data-model
@@ -36,8 +34,6 @@ public class SQLiteTable implements Table {
      */
     public final Class<? extends Record> type;
 
-    private Map<Field, String> fields;
-
     private final List<Column> columns;
 
     /**
@@ -45,7 +41,6 @@ public class SQLiteTable implements Table {
      * @param type record model for the database table
      */
     public SQLiteTable(String name, Class<? extends Record> type) {
-        this.fields = getTypeFields(FieldUsePredicate.DEFAULT_NONE);
         columns = computeColumns(FieldUsePredicate.DEFAULT_NONE);
         this.name = name;
         this.type = type;
@@ -60,7 +55,6 @@ public class SQLiteTable implements Table {
             name = type.getAnnotation(TableName.class).value();
         } else name = type.getSimpleName() + "s";
         this.type = type;
-        this.fields = getTypeFields(predicate);
         columns = computeColumns(predicate);
     }
 
@@ -70,40 +64,6 @@ public class SQLiteTable implements Table {
            columns.add( columnMapper.get(field, predicate));
         }));
         return columns;
-    }
-
-    /**
-     * @throws NullPointerException if the class type does not include any DB fields
-     */
-    private Map<Field, String> getTypeFields(FieldUsePredicate predicate) throws NullPointerException {
-        fields = new HashMap<>();
-
-        Stream.of(this.type.getFields())
-                .filter(predicate::shouldUse)
-                .forEach(field -> fields.put(field, columnMapper.getType(field).toString())
-                );
-        if (fields.isEmpty())
-            throw new NullPointerException("Class type does not include any DB fields (@DBField field)");
-        addForeignKeys(fields);
-        return fields;
-    }
-
-    /**
-     * @param tableFields all fields that contain references
-     * @throws IllegalStateException if the reference class does not have an identifier
-     */
-    private void addForeignKeys(Map<Field, String> tableFields) {
-        Stream.of(this.type.getFields())
-                .filter(field -> field.isAnnotationPresent(Reference.class)).forEach((field -> {
-                    Optional<Field> foreignField = columnMapper.getIdentifier(field.getType());
-
-                    if (foreignField.isEmpty())
-                        throw new IllegalStateException("Reference reference does not have a Identifier");
-                    Field foreignKey = foreignField.get();
-                    if (!foreignKey.isAnnotationPresent(DBField.class))
-                        throw new IllegalStateException("Identifier of reference does not have a field type");
-                    tableFields.put(field, foreignKey.getAnnotation(DBField.class).value().toString());
-                }));
     }
 
     /**
@@ -129,9 +89,9 @@ public class SQLiteTable implements Table {
      * @throws IllegalStateException if it couldn't retrieve an Identifier
      */
     @Override
-    public Field getIdentifier(){
-        return fields.keySet().stream().filter(foreignField ->
-                foreignField.isAnnotationPresent(Identifier.class)).findFirst()
+    public Column getIdentifier(){
+        return columns.stream().filter(column ->
+                        column.getField().isAnnotationPresent(Identifier.class)).findFirst()
                 .orElseThrow(()-> new IllegalStateException("Table should have an Identifier"));
     }
 
@@ -143,9 +103,9 @@ public class SQLiteTable implements Table {
     public RecordValueSet prepareInsert(Record r) {
         if (r.getClass() != type) throw new IllegalArgumentException("Object should be of type " + type.getName());
         Multimap<String, String> record = new Multimap<>();
-        fields.keySet().forEach(field -> {
+        columns.forEach(column -> {
             try {
-                record.put(field.getName(), getValue(field, r));
+                record.put(column.getName(), getValue(column.getField(), r));
             } catch (Exception ignored) {
 
             }
@@ -165,11 +125,11 @@ public class SQLiteTable implements Table {
         }
         Multimap<String, String> recordValues = new Multimap<>();
         collection.forEach(r ->
-            fields.keySet().forEach(field -> {
+            columns.forEach(column -> {
                 try {
-                    recordValues.put(columnMapper.getName(field), getValue(field, r));
+                    recordValues.put(column.getName(), getValue(column.getField(), r));
                 } catch (IllegalAccessException ignored) {
-                   recordValues.put(columnMapper.getName(field), "null");
+                   recordValues.put(column.getName(), "null");
                 }
             })
         );
@@ -184,7 +144,7 @@ public class SQLiteTable implements Table {
     public String createTableQuery() {
         StringBuilder query = new StringBuilder("CREATE TABLE ");
         query.append(name).append(" (\n ");
-        fields.forEach(((field, value) -> query.append(columnMapper.getName(field)).append(" ").append(value).append(",\n ")));
+        columns.forEach(((column) -> query.append(column.getName()).append(" ").append(column.getType()).append(",\n ")));
         query.replace(query.length() - 3, query.length() - 1, "\n);");
         return query.toString();
     }
@@ -195,7 +155,7 @@ public class SQLiteTable implements Table {
     @Override
     public String selectTableQuery() {
         StringBuilder query = new StringBuilder("SELECT ");
-        fields.forEach(((field, value) -> query.append(columnMapper.getName(field)).append(", ")));
+        columns.forEach(((column) -> query.append(column.getName()).append(", ")));
         query.replace(query.length() - 2, query.length() - 1, " FROM");
         query.append(name);
         return query.toString();
@@ -208,7 +168,7 @@ public class SQLiteTable implements Table {
 
     @Override
     public String deleteRecordQuery(){
-        return "DELETE FROM %s WHERE %s = ?;".formatted(getName(), columnMapper.getName(getIdentifier()));
+        return "DELETE FROM %s WHERE %s = ?;".formatted(getName(), columnMapper.getName(getIdentifier().getField()));
     }
 
 }
