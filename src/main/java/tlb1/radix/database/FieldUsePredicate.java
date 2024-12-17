@@ -1,5 +1,6 @@
 package tlb1.radix.database;
 
+import tlb1.radix.database.annotations.DBField;
 import tlb1.radix.database.annotations.RecordExclude;
 import tlb1.radix.database.annotations.RecordInclude;
 
@@ -20,5 +21,5 @@ public class FieldUsePredicate {
     public static FieldUsePredicate DEFAULT_ALL = new FieldUsePredicate(
             (field) -> !field.isAnnotationPresent(RecordExclude.class));
     public static FieldUsePredicate DEFAULT_NONE = new FieldUsePredicate(
-            (field) -> field.isAnnotationPresent(RecordInclude.class));
+            (field) -> field.isAnnotationPresent(RecordInclude.class) || field.isAnnotationPresent(DBField.class));
 }

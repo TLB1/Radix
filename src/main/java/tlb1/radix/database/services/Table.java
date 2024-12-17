@@ -18,22 +18,9 @@ public interface Table {
     String getName();
 
     /**
-     * @param type class to check
-     * @return the first identifier field (if present)
-     */
-    Optional<Field> getIdentifier(Class<?> type);
-
-    /**
      * @return the identifier field of this table
      */
     Field getIdentifier();
-
-    /**
-     * @param field one of the record data-model fields
-     * @return the name of the field in the DB context
-     * @throws IllegalArgumentException if the field is not related to the database context
-     */
-    String getFieldName(Field field);
 
     /**
      * Organises the Record data for use in a DB context

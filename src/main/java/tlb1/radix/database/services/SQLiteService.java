@@ -1,6 +1,7 @@
 package tlb1.radix.database.services;
 
 import org.sqlite.JDBC;
+import tlb1.radix.database.FieldUsePredicate;
 import tlb1.radix.database.TableRegistrationPredicate;
 import tlb1.radix.database.records.Record;
 import tlb1.radix.database.records.RecordValueSet;
@@ -22,6 +23,7 @@ public class SQLiteService implements DBService {
     private final List<SQLiteTable> tables = new ArrayList<>();
 
     private TableRegistrationPredicate registrationPredicate;
+    private FieldUsePredicate fieldUsePredicate;
 
     private Connection con;
 
@@ -42,6 +44,7 @@ public class SQLiteService implements DBService {
      */
     public SQLiteService(String database) {
         registrationPredicate = TableRegistrationPredicate.IMPLEMENTED_RECORD_ONLY;
+        fieldUsePredicate = FieldUsePredicate.DEFAULT_NONE;
         dbPath = database;
     }
     /**
@@ -50,9 +53,11 @@ public class SQLiteService implements DBService {
      * @param database the path of the sqlite file
      */
     public SQLiteService(String database, boolean magic) {
-        if(magic) registrationPredicate = TableRegistrationPredicate.RECORD_ONLY;
-        else  registrationPredicate = TableRegistrationPredicate.IMPLEMENTED_RECORD_ONLY;
-        dbPath = database;
+        this(database);
+        if(magic){
+            registrationPredicate = TableRegistrationPredicate.RECORD_ONLY;
+            fieldUsePredicate = FieldUsePredicate.DEFAULT_ALL;
+        }
         try{
             createConnection();
         }catch (SQLException e){
@@ -102,7 +107,7 @@ public class SQLiteService implements DBService {
      */
     @Override
     public SQLiteTable registerTable(Class<? extends Record> tableType) {
-        SQLiteTable table = new SQLiteTable(tableType);
+        SQLiteTable table = new SQLiteTable(tableType, fieldUsePredicate);
         try {
             if (!tableExists(table.getName())) {
                 exec(table.createTableQuery());
