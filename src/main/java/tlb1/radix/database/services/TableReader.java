@@ -1,6 +1,6 @@
 package tlb1.radix.database.services;
 
-import tlb1.radix.database.annotations.DBField;
+import tlb1.radix.database.FieldUsePredicate;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -56,7 +56,8 @@ public class TableReader<T> implements Callable<List<T>> {
 
         while(dataset.next()){
             T record = type.getConstructor().newInstance();
-            Arrays.stream(type.getFields()).filter((field -> field.isAnnotationPresent(DBField.class))).forEach((field -> {
+            FieldUsePredicate predicate = FieldUsePredicate.DEFAULT_ALL;
+            Arrays.stream(type.getFields()).filter(predicate::shouldUse).forEach((field -> {
                 try {
                     setField(record, field, dataset);
                 } catch (InvocationTargetException e) {

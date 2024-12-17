@@ -48,20 +48,24 @@ public class SQLiteTable implements Table {
 
     /**
      * @param type class to create a DB table for
-     * @throws NullPointerException if class does not include a table name
      */
-    public SQLiteTable(Class<? extends Record> type, FieldUsePredicate predicate) throws NullPointerException {
+    public SQLiteTable(Class<? extends Record> type, FieldUsePredicate predicate) {
         if(type.isAnnotationPresent(TableName.class)){
             name = type.getAnnotation(TableName.class).value();
         } else name = type.getSimpleName() + "s";
         this.type = type;
         columns = computeColumns(predicate);
+        if(columns.isEmpty()){
+            throw new IllegalArgumentException("Record type could not be assigned to a table");
+        }
     }
 
     private List<Column> computeColumns(FieldUsePredicate predicate){
         List<Column> columns = new ArrayList<>();
         Arrays.stream(type.getFields()).forEach((field -> {
-           columns.add( columnMapper.get(field, predicate));
+            Optional<Column> optional = columnMapper.get(field, predicate);
+            optional.ifPresent(columns::add);
+
         }));
         return columns;
     }

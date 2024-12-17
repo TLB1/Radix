@@ -96,13 +96,13 @@ class SQLiteServiceTest {
     @Test
     void testUpdateRecord() throws Exception {
         service.registerTable(TestRecord.class);
-        TestRecord record = new TestRecord(2000);
+        TestRecord record = new TestRecord(2002);
         service.insert(record);
         service.insert(List.of(
                 new TestRecord(1),
                 new TestRecord(2)
         ));
-
+        new TableReader<>(TestRecord.class, service).call().forEach(System.out::println);
         // Unchanged - (equal)
         assertTrue(new TableReader<>(TestRecord.class, service).call().contains(record));
         record.value = 3;

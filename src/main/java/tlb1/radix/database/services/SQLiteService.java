@@ -79,7 +79,7 @@ public class SQLiteService implements DBService {
 
     @Override
     public void createConnection() throws SQLException {
-        con = DriverManager.getConnection(getDatabaseURL());
+        if(con == null) con = DriverManager.getConnection(getDatabaseURL());
     }
 
     @Override

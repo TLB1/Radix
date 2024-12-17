@@ -30,11 +30,11 @@ public class SQLiteColumnMapper {
         conversion.put(UUID.class, FieldType.UUID);
     }
 
-    public Column get(Field field, FieldUsePredicate predicate) {
-        if (!predicate.shouldUse(field)) return null;
+    public Optional<Column> get(Field field, FieldUsePredicate predicate) {
+        if (!predicate.shouldUse(field)) return Optional.empty();
         FieldType type = getType(field);
         String name = getName(field);
-        return new Column(type, name, field);
+        return Optional.of(new Column(type, name, field));
     }
 
     public FieldType getType(Field field) {
