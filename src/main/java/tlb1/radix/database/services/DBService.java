@@ -90,7 +90,7 @@ public interface DBService extends AutoCloseable {
      * @return the list of records retrieved from the database
      * @throws IllegalStateException if something went wrong
      */
-    List<?> getRecords(Class<?> type);
+    <T> List<T> getRecords(Class<T> type);
 
     /**
      * Creates an interaction with the database, useful for single inserts.

@@ -203,9 +203,9 @@ public class SQLiteService implements DBService {
      * @param type record type to retrieve
      * @return the list of records retrieved from the database
      */
-    public List<?> getRecords(Class<?> type) {
+    public <T> List<T> getRecords(Class<T> type) {
         try {
-            TableReader<?> tableReader = new TableReader<>(type, this);
+            TableReader<T> tableReader = new TableReader<>(type, this);
             return tableReader.call();
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Could not get records for type %s".formatted(type.getName()));

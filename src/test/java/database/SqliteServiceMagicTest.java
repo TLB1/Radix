@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import tlb1.radix.database.TableRegistrationPredicate;
 import tlb1.radix.database.services.DBService;
 import tlb1.radix.database.services.SQLiteService;
-import tlb1.radix.database.services.TableReader;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -28,12 +27,12 @@ public class SqliteServiceMagicTest {
     @BeforeEach
     void resetService() throws SQLException {
         service = new SQLiteService(DB_NAME, true);
-        service.setLogLevel(Level.ALL);
+        service.setLogLevel(Level.OFF);
     }
 
     @AfterEach
     void eradicateService() throws SQLException {
-        ((SQLiteService)service).eradicate();
+        ((SQLiteService) service).eradicate();
     }
 
     @Test
@@ -93,22 +92,22 @@ public class SqliteServiceMagicTest {
     }
 
     @Test
-    void testUpdateRecord() throws Exception {
+    void testUpdateRecord() {
         MagicTestRecord record = new MagicTestRecord(2002);
         service.insert(record);
         service.insert(List.of(
                 new MagicTestRecord(1),
                 new MagicTestRecord(2)
         ));
-        new TableReader<>(MagicTestRecord.class, service).call().forEach(System.out::println);
+
         // Unchanged - (equal)
-        assertTrue(new TableReader<>(MagicTestRecord.class, service).call().contains(record));
+        assertTrue(service.getRecords(MagicTestRecord.class).contains(record));
         record.value = 3;
         // Object Updated - (not equal)
-        assertFalse(new TableReader<>(MagicTestRecord.class, service).call().contains(record));
+        assertFalse(service.getRecords(MagicTestRecord.class).contains(record));
         service.update(record);
         // DB Updated - (equal)
-        assertTrue(new TableReader<>(MagicTestRecord.class, service).call().contains(record));
+        assertTrue(service.getRecords(MagicTestRecord.class).contains(record));
     }
 
     @Test
@@ -129,15 +128,16 @@ public class SqliteServiceMagicTest {
         assertTrue(service.hasRecords(MagicTestRecord.class));
         assertEquals(3, service.getRecordCount(MagicTestRecord.class));
     }
+
     @Test
     void testInsertRecordsThatAreNoRecord() {
-        assertThrows(IllegalArgumentException.class, ()->{
-            service.insert(List.of(
-                    new NotAMagicTestRecord(),
-                    new NotAMagicTestRecord(),
-                    new NotAMagicTestRecord()
-            ));
-        });
+        assertThrows(IllegalArgumentException.class, () ->
+                service.insert(List.of(
+                        new NotAMagicTestRecord(),
+                        new NotAMagicTestRecord(),
+                        new NotAMagicTestRecord()
+                ))
+        );
 
         assertFalse(service.tableExists(NotAMagicTestRecord.class));
         assertFalse(service.hasRecords(NotAMagicTestRecord.class));
@@ -147,13 +147,13 @@ public class SqliteServiceMagicTest {
     void testInsertRecordsWithAltPredicate() {
         service.setTableRegistrationPredicate(TableRegistrationPredicate.RECORD_ONLY);
 
-        assertDoesNotThrow(()->{
-            service.insert(List.of(
-                    new NotATestRecord(),
-                    new NotATestRecord(),
-                    new NotATestRecord()
-            ));
-        });
+        assertDoesNotThrow(() ->
+                service.insert(List.of(
+                        new NotATestRecord(),
+                        new NotATestRecord(),
+                        new NotATestRecord()
+                ))
+        );
 
         assertTrue(service.tableExists(NotATestRecord.class));
         assertTrue(service.hasRecords(NotATestRecord.class));

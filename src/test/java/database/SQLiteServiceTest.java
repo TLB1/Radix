@@ -6,7 +6,6 @@ import org.junit.jupiter.api.*;
 import tlb1.radix.database.TableRegistrationPredicate;
 import tlb1.radix.database.services.DBService;
 import tlb1.radix.database.services.SQLiteService;
-import tlb1.radix.database.services.TableReader;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -30,7 +29,7 @@ class SQLiteServiceTest {
 
     @AfterEach
     void eradicateService() throws SQLException {
-        ((SQLiteService)service).eradicate();
+        ((SQLiteService) service).eradicate();
     }
 
     @Test
@@ -94,7 +93,7 @@ class SQLiteServiceTest {
     }
 
     @Test
-    void testUpdateRecord() throws Exception {
+    void testUpdateRecord() {
         service.registerTable(TestRecord.class);
         TestRecord record = new TestRecord(2002);
         service.insert(record);
@@ -102,23 +101,35 @@ class SQLiteServiceTest {
                 new TestRecord(1),
                 new TestRecord(2)
         ));
-        new TableReader<>(TestRecord.class, service).call().forEach(System.out::println);
+
         // Unchanged - (equal)
-        assertTrue(new TableReader<>(TestRecord.class, service).call().contains(record));
+        assertTrue(service.getRecords(TestRecord.class).contains(record));
         record.value = 3;
         // Object Updated - (not equal)
-        assertFalse(new TableReader<>(TestRecord.class, service).call().contains(record));
+        assertFalse(service.getRecords(TestRecord.class).contains(record));
         service.update(record);
         // DB Updated - (equal)
-        assertTrue(new TableReader<>(TestRecord.class, service).call().contains(record));
+        assertTrue(service.getRecords(TestRecord.class).contains(record));
     }
 
     @Test
-    void testInsertRecordWithoutRegisteringTable() throws SQLException {
+    void testInsertRecordWithoutRegisteringTable() {
         service.insert(new TestRecord(10));
 
         assertTrue(service.hasRecords(TestRecord.class));
     }
+    @Test
+    void getRecordsTest() throws Exception {
+        service.registerTable(TestRecord.class);
+        TestRecord testRecord = new TestRecord(999);
+        service.insert(testRecord);
+
+        List<TestRecord> records = service.getRecords(TestRecord.class);
+
+        assertFalse(records.isEmpty());
+        assertTrue(records.contains(testRecord));
+    }
+
 
     @Test
     void testInsertRecordsWithoutRegisteringTable() {
@@ -131,15 +142,16 @@ class SQLiteServiceTest {
         assertTrue(service.hasRecords(TestRecord.class));
         assertEquals(3, service.getRecordCount(TestRecord.class));
     }
+
     @Test
     void testInsertRecordsThatAreNoRecord() {
-        assertThrows(IllegalArgumentException.class, ()->{
-            service.insert(List.of(
-                    new NotATestRecord(),
-                    new NotATestRecord(),
-                    new NotATestRecord()
-            ));
-        });
+        assertThrows(IllegalArgumentException.class, () ->
+                service.insert(List.of(
+                        new NotATestRecord(),
+                        new NotATestRecord(),
+                        new NotATestRecord()
+                ))
+        );
 
         assertFalse(service.tableExists(NotATestRecord.class));
         assertFalse(service.hasRecords(NotATestRecord.class));
@@ -149,13 +161,13 @@ class SQLiteServiceTest {
     void testInsertRecordsWithAltPredicate() {
         service.setTableRegistrationPredicate(TableRegistrationPredicate.RECORD_ONLY);
 
-        assertDoesNotThrow(()->{
-            service.insert(List.of(
-                    new NotATestRecord(),
-                    new NotATestRecord(),
-                    new NotATestRecord()
-            ));
-        });
+        assertDoesNotThrow(() ->
+                service.insert(List.of(
+                        new NotATestRecord(),
+                        new NotATestRecord(),
+                        new NotATestRecord()
+                ))
+        );
 
         assertTrue(service.tableExists(NotATestRecord.class));
         assertTrue(service.hasRecords(NotATestRecord.class));
@@ -166,13 +178,13 @@ class SQLiteServiceTest {
         eradicateService();
         service = new SQLiteService(DB_NAME, true);
 
-        assertDoesNotThrow(()->{
-            service.insert(List.of(
-                    new NotATestRecord(),
-                    new NotATestRecord(),
-                    new NotATestRecord()
-            ));
-        });
+        assertDoesNotThrow(() ->
+                service.insert(List.of(
+                        new NotATestRecord(),
+                        new NotATestRecord(),
+                        new NotATestRecord()
+                ))
+        );
 
         assertTrue(service.tableExists(NotATestRecord.class));
         assertTrue(service.hasRecords(NotATestRecord.class));
